@@ -22,7 +22,7 @@ const Contact = () => {
         </a>
 
         <i class="fa fa-instagram"></i>
-        <a class="mail-links" href="https://www.instagram.com/kaxhie_x/">
+        <a class="mail-links" href="https://www.instagram.com/sid._.ns/">
           @sid._.ns
         </a>
 
