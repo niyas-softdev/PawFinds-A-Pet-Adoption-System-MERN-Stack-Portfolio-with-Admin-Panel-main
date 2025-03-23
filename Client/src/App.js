@@ -9,6 +9,7 @@ import Pets from "./Components/Pets/Pets";
 import AdoptForm from "./Components/AdoptForm/AdoptForm";
 import AdminLogin from "./Components/AdminPanel/AdminLogin";
 import "./App.css";
+import PetFoodList from "./Components/Foods/Food";
 
 const Layout = ({ children }) => (
   <>
@@ -51,6 +52,14 @@ const App = () => {
           element={
             <Layout>
               <Pets />
+            </Layout>
+          } 
+        />
+        <Route 
+          path="/petFoodList" 
+          element={
+            <Layout>
+              <PetFoodList />
             </Layout>
           } 
         />

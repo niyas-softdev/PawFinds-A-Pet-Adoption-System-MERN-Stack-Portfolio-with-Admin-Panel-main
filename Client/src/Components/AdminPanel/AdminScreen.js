@@ -3,6 +3,8 @@ import PostingPets from './PostingPets'
 import AdoptingRequests from './AdoptingRequests'
 import AdoptedHistory from './AdoptedHistory'
 import ApprovedRequests from './ApprovedRequests'
+import PetFoodManager from './FoodController'
+import InterestList from './InterestList'
 
 const AdminScreen = () => {
   const [screen, setScreen] = useState('postingPet')
@@ -15,7 +17,8 @@ const AdminScreen = () => {
           <p onClick={() => setScreen('approvedRequests')}>Approved Pets</p>
           <p onClick={() => setScreen('adoptingPet')}>Adoption Requests</p>
           <p onClick={() => setScreen('adoptedHistory')}>Adopted History</p>
-
+          <p onClick={() => setScreen('PetFoodManager')}>Pet Food Manager </p>
+          <p onClick={() => setScreen('InterestList')}>InterestList  </p>
         </div>
       </div>
       <div className='admin-screen-right'>
@@ -23,6 +26,9 @@ const AdminScreen = () => {
         {screen === 'approvedRequests' && <ApprovedRequests />}
         {screen === 'adoptingPet' && <AdoptingRequests />}
         {screen === 'adoptedHistory' && <AdoptedHistory />}
+        {screen === 'PetFoodManager' && <PetFoodManager />}
+        {screen === 'InterestList' && <InterestList />}
+
       </div>
     </div>
   )

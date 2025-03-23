@@ -8,7 +8,7 @@ const Navbar = (props) => {
       <div>
         <Link className="logo-container" to="/">
           <img className="navbar-logo" src={logo} alt="PawFinds Logo" />
-          <p>{props.title}</p>
+          <p>Meow</p>
         </Link>
       </div>
       <div>
@@ -21,6 +21,9 @@ const Navbar = (props) => {
           </li>
           <li>
             <Link to="/pets">Pets</Link>
+          </li>
+          <li>
+            <Link to="/petFoodList">Foods</Link>
           </li>
           <li>
             <Link to="/contact">Contact Us</Link>
