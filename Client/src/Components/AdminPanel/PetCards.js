@@ -1,177 +1,140 @@
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 
-const PetCards = (props) => {
+const PetCards = ({ pet, deleteBtnText = "Delete", approveBtn = true, updateCards }) => {
   const [showJustificationPopup, setShowJustificationPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [showApproved, setShowApproved] = useState(false);
-  const [showDeletedSuccess, setshowDeletedSuccess] = useState(false);
+  const [showDeletedSuccess, setShowDeletedSuccess] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
-
-  const truncateText = (text, maxLength) => {
-    if (text.length <= maxLength) {
-      return text;
-    }
-    return text.substring(0, maxLength) + '...';
-  };
-
-  const maxLength = 40;
 
   const formatTimeAgo = (updatedAt) => {
     const date = new Date(updatedAt);
     return formatDistanceToNow(date, { addSuffix: true });
   };
 
+  const truncateText = (text, maxLength = 40) => {
+    return text.length <= maxLength ? text : text.substring(0, maxLength) + '...';
+  };
+
   const handleApprove = async () => {
     setIsApproving(true);
     try {
-      const response = await fetch(`http://localhost:4000/approving/${props.pet._id}`, {
+      const response = await fetch(`http://localhost:5174/api/pets/approve/${pet._id}`, {
         method: 'PUT',
-        body: JSON.stringify({
-          status: "Approved"
-        }),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (!response.ok) {
-        setShowErrorPopup(true);
-      } else {
-        setShowApproved(true);
-      }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: "Approved" }),
+      });
+      if (!response.ok) throw new Error("Approval failed");
+      setShowApproved(true);
     } catch (err) {
+      console.error(err);
       setShowErrorPopup(true);
     } finally {
       setIsApproving(false);
     }
-  }
+  };
 
-  const deleteFormsAdoptedPet = async () => {
-    setIsDeleting(true)
+  const handleDelete = async () => {
+    setIsDeleting(true);
     try {
-      const deleteResponses = await fetch(`http://localhost:4000/form/delete/many/${props.pet._id}`, {
-        method: 'DELETE'
-      });
-      if (!deleteResponses.ok) {
-        throw new Error('Failed to delete forms');
-      }
+      const response = await fetch(`http://localhost:5174/api/pets/delete/${pet._id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error("Delete failed");
+      setShowDeletedSuccess(true);
     } catch (err) {
-    }finally{
-      handleReject();
-    }
-  }
-
-  const handleReject = async () => {
-    try {
-      const response = await fetch(`http://localhost:4000/delete/${props.pet._id}`, {
-        method: 'DELETE'
-      })
-
-      if (!response.ok) {
-        setShowErrorPopup(true);
-        throw new Error('Failed to delete pet');
-      } else {
-        setshowDeletedSuccess(true);
-      }
-    } catch (err) {
+      console.error(err);
       setShowErrorPopup(true);
-      console.error('Error deleting pet:', err);
     } finally {
       setIsDeleting(false);
     }
-  }
+  };
+  
 
   return (
-    <div className='req-containter'>
-      <div className='pet-view-card'>
-        <div className='pet-card-pic'>
-          <img src={`http://localhost:4000/images/${props.pet.filename}`} alt={props.pet.name} />
+    <div className="req-containter">
+      <div className="pet-view-card">
+        <div className="pet-card-pic">
+          <img src={`http://localhost:5174/images/${pet.filename}`} alt={pet.name} />
         </div>
-        <div className='pet-card-details'>
-          <h2>{props.pet.name}</h2>
-          <p><b>Type:</b> {props.pet.type}</p>
-          <p><b>Age:</b> {props.pet.age}</p>
-          <p><b>Location:</b> {props.pet.area}</p>
-          <p><b>Owner Email:</b> {props.pet.email}</p>
-          <p><b>Owner Phone:</b> {props.pet.phone}</p>
-          <p>
-            <b>Justification:</b>
-            <span>
-              {truncateText(props.pet.justification, maxLength)}
-              {props.pet.justification.length > maxLength && (
-                <span onClick={() => setShowJustificationPopup(!showJustificationPopup)} className='read-more-btn'>
-                  Read More
-                </span>
-              )}
-            </span>
+
+        <div className="pet-card-details">
+          <h2>{pet.name}</h2>
+          <p><b>Type:</b> {pet.type}</p>
+          <p><b>Age:</b> {pet.age}</p>
+          <p><b>Location:</b> {pet.area}</p>
+          <p><b>Price:</b> ₹{pet.price}</p>
+          <p><b>Purpose:</b> {pet.purpose}</p>
+          <p><b>Owner Email:</b> <a href={`mailto:${pet.email}`}>{pet.email}</a></p>
+          <p><b>Owner Phone:</b> <a href={`tel:${pet.phone}`}>{pet.phone}</a></p>
+          <p><b>Justification:</b> {truncateText(pet.justification)}
+            {pet.justification.length > 40 && (
+              <span onClick={() => setShowJustificationPopup(true)} className="read-more-btn"> Read More</span>
+            )}
           </p>
-          <p>{formatTimeAgo(props.pet.updatedAt)}</p>
+          <p><b>Posted:</b> {formatTimeAgo(pet.updatedAt)}</p>
         </div>
-        <div className='app-rej-btn'>
-          <button onClick={deleteFormsAdoptedPet} disabled={isDeleting || isApproving}>{isDeleting ? (<p>Deleting</p>) : (props.deleteBtnText)}</button>
-          {props.approveBtn ?
-            <button disabled={isDeleting || isApproving} onClick={handleApprove}>{isApproving ? (<p>Approving</p>) : 'Approve'}</button>
-            : ''
-          }
+
+        <div className="app-rej-btn">
+          <button onClick={handleDelete} disabled={isDeleting || isApproving}>
+            {isDeleting ? "Deleting..." : deleteBtnText}
+          </button>
+          {approveBtn && (
+            <button onClick={handleApprove} disabled={isDeleting || isApproving}>
+              {isApproving ? "Approving..." : "Approve"}
+            </button>
+          )}
         </div>
+
+        {/* Popup for full justification */}
         {showJustificationPopup && (
-          <div className='popup'>
-            <div className='popup-content'>
+          <div className="popup">
+            <div className="popup-content">
               <h4>Justification:</h4>
-              <p>{props.pet.justification}</p>
+              <p>{pet.justification}</p>
+              <button onClick={() => setShowJustificationPopup(false)} className="close-btn">
+                Close <i className="fa fa-times" />
+              </button>
             </div>
-            <button onClick={() => setShowJustificationPopup(!showJustificationPopup)} className='close-btn'>
-              Close <i className="fa fa-times"></i>
-            </button>
           </div>
         )}
+
+        {/* Error Popup */}
         {showErrorPopup && (
-          <div className='popup'>
-            <div className='popup-content'>
+          <div className="popup">
+            <div className="popup-content">
               <p>Oops!... Connection Error</p>
+              <button onClick={() => setShowErrorPopup(false)} className="close-btn">
+                Close <i className="fa fa-times" />
+              </button>
             </div>
-            <button onClick={() => setShowErrorPopup(!showErrorPopup)} className='close-btn'>
-              Close <i className="fa fa-times"></i>
-            </button>
           </div>
         )}
+
+        {/* Approval Popup */}
         {showApproved && (
-          <div className='popup'>
-            <div className='popup-content'>
-              <p>Approval Successful...</p>
-              <p>
-                Please contact the customer at{' '}
-                <a href={`mailto:${props.pet.email}`}>{props.pet.email}</a>{' '}
-                or{' '}
-                <a href={`tel:${props.pet.phone}`}>{props.pet.phone}</a>{' '}
-                to arrange the transfer of the pet from the owner's home to our adoption center.
-              </p>
+          <div className="popup">
+            <div className="popup-content">
+              <p>Approval Successful!</p>
+              <p>Please contact the owner at <a href={`mailto:${pet.email}`}>{pet.email}</a> or <a href={`tel:${pet.phone}`}>{pet.phone}</a>.</p>
+              <button onClick={() => { setShowApproved(false); updateCards(); }} className="close-btn">
+                Close <i className="fa fa-times" />
+              </button>
             </div>
-            <button onClick={() => {
-              setShowApproved(!showApproved)
-              props.updateCards()
-            }} className='close-btn'>
-              Close <i className="fa fa-times"></i>
-            </button>
           </div>
         )}
 
+        {/* Deletion Popup */}
         {showDeletedSuccess && (
-          <div className='popup'>
-            <div className='popup-content'>
-              <p>Deleted Successfully from Database...</p>
+          <div className="popup">
+            <div className="popup-content">
+              <p>Deleted Successfully from Database.</p>
+              <button onClick={() => { setShowDeletedSuccess(false); updateCards(); }} className="close-btn">
+                Close <i className="fa fa-times" />
+              </button>
             </div>
-            <button onClick={() => {
-              setshowDeletedSuccess(!showDeletedSuccess)
-              props.updateCards()
-            }} className='close-btn'>
-              Close <i className="fa fa-times"></i>
-            </button>
           </div>
         )}
-
       </div>
     </div>
   );

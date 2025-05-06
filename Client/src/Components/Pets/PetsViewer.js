@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
-import AdoptForm from '../AdoptForm/AdoptForm';
 import { formatDistanceToNow } from 'date-fns';
 
-const PetsViewer = (props) => {
-  const [showPopup, setShowPopup] = useState(false);
-
-  const togglePopup = () => {
-    setShowPopup(!showPopup);
-  };
-
+const PetsViewer = ({ pet, onBuy }) => {
   const formatTimeAgo = (updatedAt) => {
     const date = new Date(updatedAt);
     return formatDistanceToNow(date, { addSuffix: true });
@@ -17,28 +10,19 @@ const PetsViewer = (props) => {
   return (
     <div className='pet-view-card'>
       <div className='pet-card-pic'>
-        <img src={`http://localhost:4000/images/${props.pet.filename}`} alt={props.pet.name} />
+        <img src={`http://localhost:5174/images/${pet.filename}`} alt={pet.name} />
       </div>
       <div className='pet-card-details'>
-        <h2>{props.pet.name}</h2>
-        <p><b>Type:</b> {props.pet.type}</p>
-        <p><b>Age:</b> {props.pet.age}</p>
-        <p><b>Location:</b> {props.pet.area}</p>
-        <p>{formatTimeAgo(props.pet.updatedAt)}</p>
+        <h2>{pet.name}</h2>
+        <p><b>Type:</b> {pet.type}</p>
+        <p><b>Age:</b> {pet.age}</p>
+        <p><b>Price:</b> ₹{pet.price}</p>
+        <p><b>Location:</b> {pet.area}</p>
+        <p>{formatTimeAgo(pet.updatedAt)}</p>
       </div>
       <div className='show-interest-btn'>
-        <button onClick={togglePopup}>Show Interest <i className="fa fa-paw"></i></button>
+        <button onClick={() => onBuy(pet)}>Buy <i className="fa fa-shopping-cart"></i></button>
       </div>
-      {showPopup && (
-        <div className='popup'>
-          <div className='popup-content'>
-            <AdoptForm closeForm={togglePopup} pet={props.pet}/>
-          </div>
-          <button onClick={togglePopup} className='close-btn'>
-            Close <i className="fa fa-times"></i>
-          </button>
-        </div>
-      )}
     </div>
   );
 };

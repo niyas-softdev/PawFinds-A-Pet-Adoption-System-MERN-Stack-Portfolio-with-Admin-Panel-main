@@ -1,3 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
 * {
     margin: 0;
     padding: 0;
@@ -13,6 +19,9 @@
     --textGrey: rgb(237, 233, 233);
     --darkGrey: #1F2130;
 }
+
+
+/* navbar */
 
 .navbar-container {
     width: 100%;

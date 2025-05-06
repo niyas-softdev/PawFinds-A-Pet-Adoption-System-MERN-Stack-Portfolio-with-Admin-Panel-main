@@ -1,284 +1,247 @@
+// ✅ PetFoodList (User Side) with Add to Cart, Proper Cart Alignment, and UI Enhancements + userId handling
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_URL = "http://localhost:4000/api/pet-foods";
-const INTEREST_API = "http://localhost:4000/api/interests";
+const API_URL = "http://localhost:5174/api/pet-foods";
+const ORDER_URL = "http://localhost:5174/api/food-orders/place";
 
 const PetFoodList = () => {
-    const [petFoods, setPetFoods] = useState([]);
-    const [showPopup, setShowPopup] = useState(false);
-    const [selectedFood, setSelectedFood] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [interestData, setInterestData] = useState({
-        name: "",
-        contact: "",
-        message: "",
-    });
+  const [petFoods, setPetFoods] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [userDetails, setUserDetails] = useState({ name: "", address: "", phone: "" });
+  const userId = localStorage.getItem('userId');
 
-    useEffect(() => {
-        fetchPetFoods();
-    }, []);
+  useEffect(() => {
+    fetchPetFoods();
+    
+  }, []);
 
-    const fetchPetFoods = async () => {
-        setLoading(true);
-        try {
-            const response = await axios.get(`${API_URL}/get`);
-            setPetFoods(response.data);
-        } catch (error) {
-            console.error("Error loading pet foods:", error);
-            setError("Failed to fetch pet food data.");
-        } finally {
-            setLoading(false);
-        }
+  const fetchPetFoods = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/get`);
+      setPetFoods(response.data);
+    } catch (error) {
+      console.error("Error loading pet foods:", error);
+      setError("Failed to fetch pet food data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = (item) => {
+    if (!cart.find(i => i._id === item._id)) {
+      setCart([...cart, item]);
+    } else {
+      alert("Item already in cart");
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (!userId) return alert("User ID missing. Please log in.");
+
+    const order = {
+      userId,
+      userDetails,
+      items: cart.map(item => ({
+        foodId: item._id,
+        name: item.name,
+        price: item.price
+      })),
+      total: cart.reduce((sum, item) => sum + item.price, 0),
+      paymentMode: "COD",
     };
 
-    const handleInterestClick = (food) => {
-        setSelectedFood(food);
-        setShowPopup(true);
-    };
+    try {
+      const res = await axios.post(ORDER_URL, order);
+      console.log("Order saved:", res.data);
+      alert("Order placed successfully!");
+      setCart([]);
+      setShowCheckout(false);
+      setUserDetails({ name: "", address: "", phone: "" });
+    } catch (err) {
+      console.error("Checkout failed:", err);
+      alert("Failed to place order.");
+    }
+  };
 
-    const handleClosePopup = () => {
-        setShowPopup(false);
-        setSelectedFood(null);
-        setInterestData({ name: "", contact: "", message: "" });
-    };
+  return (
+    <div style={styles.container}>
+      <h2 style={styles.title}>Pet Food Products</h2>
+      {loading && <p style={styles.loading}>Loading...</p>}
+      {error && <p style={styles.error}>{error}</p>}
 
-    const handleChange = (e) => {
-        setInterestData({ ...interestData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!selectedFood) return;
-
-        const dataToSend = {
-            ...interestData,
-            petFoodId: selectedFood._id,
-            petFoodName: selectedFood.name,
-        };
-
-        try {
-            await axios.post(INTEREST_API, dataToSend);
-            alert("Your interest has been submitted!");
-            handleClosePopup();
-        } catch (error) {
-            console.error("Error submitting interest:", error);
-            alert("Failed to submit your interest.");
-        }
-    };
-
-    return (
-        <div style={styles.container}>
-            <h2 style={styles.title}>Pet Food Products</h2>
-
-            {loading && <p style={styles.loading}>Loading...</p>}
-            {error && <p style={styles.error}>{error}</p>}
-
-            <div style={styles.gridContainer}>
-                {petFoods.map((food) => (
-                    <div key={food._id} style={styles.card}>
-                        <div style={styles.imageContainer}>
-                            <img 
-                                src={food.images?.[0] ? `http://localhost:4000/images/${food.images[0]}` : "https://widgets.truekonnects.com/images/default_food.jpg"}
-                                alt={food.name}
-                                style={styles.image}
-                            />
-                        </div>
-                        <div style={styles.cardContent}>
-                            <h3 style={styles.foodName}>{food.name}</h3>
-                            <p style={styles.details}><strong>Brand:</strong> {food.brand}</p>
-                            <p style={styles.details}><strong>Type:</strong> {food.petType}</p>
-                            <p style={styles.details}><strong>Food Type:</strong> {food.foodType}</p>
-                            <p style={styles.price}><strong>Price:</strong> ${food.price}</p>
-                            <p style={styles.details}><strong>Weight:</strong> {food.weight} kg</p>
-                            <button style={styles.button} onClick={() => handleInterestClick(food)}>Show Interested <i class="fa fa-paw"></i></button>
-                        </div>
-                    </div>
-                ))}
+      <div style={styles.gridContainer}>
+        {petFoods.map((food) => (
+          <div key={food._id} style={styles.card}>
+            <div style={styles.imageContainer}>
+              <img
+                src={food.images?.[0] ? `http://localhost:5174/images/${food.images[0]}` : "https://widgets.truekonnects.com/images/default_food.jpg"}
+                alt={food.name}
+                style={styles.image}
+              />
             </div>
+            <div style={styles.cardContent}>
+              <h3 style={styles.foodName}>{food.name}</h3>
+              <p style={styles.details}><strong>Brand:</strong> {food.brand}</p>
+              <p style={styles.details}><strong>Type:</strong> {food.petType}</p>
+              <p style={styles.details}><strong>Food Type:</strong> {food.foodType}</p>
+              <p style={styles.price}><strong>Price:</strong> ₹{food.price}</p>
+              <p style={styles.details}><strong>Weight:</strong> {food.weight} kg</p>
+              <button style={styles.button} onClick={() => handleAddToCart(food)}>Add to Cart <i className="fa fa-cart-plus"></i></button>
+            </div>
+          </div>
+        ))}
+      </div>
 
-            {showPopup && selectedFood && (
-                <div style={styles.popupOverlay}>
-                    <div style={styles.popup}>
-                        <h2>Express Interest in {selectedFood.name}</h2>
-                        <form onSubmit={handleSubmit}>
-                            <input 
-                                type="text" 
-                                name="name" 
-                                placeholder="Your Name" 
-                                value={interestData.name} 
-                                onChange={handleChange} 
-                                required
-                                style={styles.input}
-                            />
-                            <input 
-                                type="text" 
-                                name="contact" 
-                                placeholder="Your Contact Info" 
-                                value={interestData.contact} 
-                                onChange={handleChange} 
-                                required
-                                style={styles.input}
-                            />
-                            <textarea 
-                                name="message" 
-                                placeholder="Message (optional)" 
-                                value={interestData.message} 
-                                onChange={handleChange} 
-                                style={styles.textarea}
-                            />
-                            <div style={styles.buttonContainer}>
-                                <button type="submit" style={styles.button}>Submit Interest</button>
-                                <button type="button" style={styles.closeButton} onClick={handleClosePopup}>Cancel</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+      {cart.length > 0 && (
+        <div style={styles.cartSection}>
+          <h3 style={styles.cartTitle}>🛒 Your Cart</h3>
+          {cart.map((item) => (
+            <div key={item._id} style={styles.cartItem}>
+              <span style={styles.cartItemName}>{item.name}</span>
+              <span style={styles.cartItemPrice}>₹{item.price}</span>
+            </div>
+          ))}
+          <p style={styles.total}><strong>Total:</strong> ₹{cart.reduce((sum, i) => sum + i.price, 0)}</p>
+          <button onClick={() => setShowCheckout(true)} style={styles.checkoutBtn}>Buy Now</button>
         </div>
-    );
+      )}
+
+      {showCheckout && (
+        <div style={styles.popupOverlay}>
+          <div style={styles.popup}>
+            <h3>Checkout (Cash on Delivery)</h3>
+            <p>Total Items: {cart.length}</p>
+            <p>Total Price: ₹{cart.reduce((sum, i) => sum + i.price, 0)}</p>
+            <input type="text" placeholder="Your Name" value={userDetails.name} onChange={(e) => setUserDetails({ ...userDetails, name: e.target.value })} style={styles.input} />
+            <input type="text" placeholder="Address" value={userDetails.address} onChange={(e) => setUserDetails({ ...userDetails, address: e.target.value })} style={styles.input} />
+            <input type="text" placeholder="Phone Number" value={userDetails.phone} onChange={(e) => setUserDetails({ ...userDetails, phone: e.target.value })} style={styles.input} />
+            <div style={styles.buttonContainer}>
+              <button onClick={handleCheckout} style={styles.button}>Place Order</button>
+              <button onClick={() => setShowCheckout(false)} style={styles.closeButton}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const styles = {
-    container: {
-        width: "80%",
-        margin: "auto",
-        textAlign: "center",
-        fontFamily: "'Arial', sans-serif",
-    },
-    title: {
-        fontSize: "28px",
-        fontWeight: "bold",
-        marginBottom: "20px",
-        color: "#333",
-    },
-    loading: {
-        color: "blue",
-        fontSize: "18px",
-    },
-    error: {
-        color: "red",
-        fontSize: "16px",
-    },
-    gridContainer: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-        gap: "20px",
-        justifyContent: "center",
-    },
-    card: {
-        border: "1px solid #9d60f2",
-        borderRadius: "8px",
-        overflow: "hidden",
-        backgroundColor: "#fff",
-        boxShadow: "2px 2px 10px rgba(0, 0, 0, 0.08)",
-        transition: "transform 0.2s ease-in-out",
-        cursor: "pointer",
-        width: "100%",
-    },
-    cardHover: {
-        transform: "scale(1.03)",
-    },
-    imageContainer: {
-        width: "100%",
-         height: "180px",
-        overflow: "hidden",
-    },
-    image: {
-        // width: "100%",
-        height: "100%",
-        objectFit: "cover",
-    },
-    cardContent: {
-        padding: "10px",
-    },
-    foodName: {
-        fontSize: "20px",
-        fontWeight: "bold",
-        marginTop: "10px",
-        color: "#333",
-    },
-    details: {
-        fontSize: "12px",
-        color: "#555",
-        marginBottom: "5px",
-    },
-    price: {
-        fontSize: "16px",
-        fontWeight: "bold",
-        color: "#28a745",
-    },
-    button: {
-        backgroundColor: "#9d60f2",
-        color: "white",
-        border: "none",
-        padding: "8px 12px",
-        cursor: "pointer",
-        borderRadius: "6px",
-        marginTop: "10px",
-        fontSize: "12px",
-    },
-    popupOverlay: {
-        position: "fixed",
-        top: "0",
-        left: "0",
-        width: "100%",
-        height: "100%",
-        background: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    popup: {
-        background: "white",
-        padding: "20px",
-        width: "400px",
-        borderRadius: "10px",
-        textAlign: "center",
-        boxShadow: "3px 3px 15px rgba(0, 0, 0, 0.2)",
-    },
-    input: {
-        width: "100%",
-        padding: "10px",
-        marginBottom: "10px",
-        border: "1px solid #ccc",
-        borderRadius: "5px",
-        fontSize: "14px",
-        fontFamily: "'Arial', sans-serif",
-        boxSizing: "border-box",
-    },
-    
-    textarea: {
-        width: "100%",
-        padding: "10px",
-        height: "80px",
-        border: "1px solid #ccc",
-        borderRadius: "5px",
-        fontSize: "14px",
-        fontFamily: "'Arial', sans-serif",
-        resize: "vertical",
-        boxSizing: "border-box",
-        marginBottom: "10px",
-    },
-    
-    buttonContainer: {
-        display: "flex",
-        justifyContent: "space-between",
-        marginTop: "10px",
-        gap: "10px",
-    },
-    
-    closeButton: {
-        backgroundColor: "#ccc",
-        color: "#333",
-        border: "none",
-        padding: "8px 12px",
-        cursor: "pointer",
-        borderRadius: "6px",
-        fontSize: "12px",
-    },
-    
+  container: { width: "80%", margin: "auto", textAlign: "center", fontFamily: "'Arial', sans-serif" },
+  title: { fontSize: "28px", fontWeight: "bold", marginBottom: "20px", color: "#333" },
+  loading: { color: "blue", fontSize: "18px" },
+  error: { color: "red", fontSize: "16px" },
+  gridContainer: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: "20px",
+    justifyContent: "center",
+  },
+  card: {
+    border: "1px solid #9d60f2",
+    borderRadius: "8px",
+    overflow: "hidden",
+    backgroundColor: "#fff",
+    boxShadow: "2px 2px 10px rgba(0, 0, 0, 0.08)",
+    transition: "transform 0.2s ease-in-out",
+    cursor: "pointer",
+  },
+  imageContainer: { width: "100%", height: "180px", overflow: "hidden" },
+  image: { width: "100%", height: "100%", objectFit: "cover" },
+  cardContent: { padding: "10px" },
+  foodName: { fontSize: "20px", fontWeight: "bold", marginTop: "10px", color: "#333" },
+  details: { fontSize: "12px", color: "#555", marginBottom: "5px" },
+  price: { fontSize: "16px", fontWeight: "bold", color: "#28a745" },
+  button: {
+    backgroundColor: "#9d60f2",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    cursor: "pointer",
+    borderRadius: "6px",
+    marginTop: "10px",
+    fontSize: "12px",
+  },
+  cartSection: {
+    marginTop: "40px",
+    padding: "20px",
+    border: "1px solid #ccc",
+    borderRadius: "10px",
+    backgroundColor: "#f9f9f9",
+    textAlign: "left",
+  },
+  cartTitle: { fontSize: "20px", fontWeight: "bold", marginBottom: "15px", color: "#444" },
+  cartItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "8px 0",
+    borderBottom: "1px solid #ddd",
+  },
+  cartItemName: { fontSize: "14px", color: "#222" },
+  cartItemPrice: { fontWeight: "bold", color: "#28a745" },
+  total: { marginTop: "10px", fontWeight: "bold", fontSize: "16px", textAlign: "right" },
+  checkoutBtn: {
+    marginTop: "10px",
+    backgroundColor: "#4CAF50",
+    color: "white",
+    border: "none",
+    padding: "10px 20px",
+    cursor: "pointer",
+    borderRadius: "6px",
+    fontSize: "14px",
+  },
+  popupOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    background: "rgba(0, 0, 0, 0.5)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+  popup: {
+    background: "white",
+    padding: "20px",
+    width: "400px",
+    borderRadius: "10px",
+    textAlign: "center",
+    boxShadow: "3px 3px 15px rgba(0, 0, 0, 0.2)",
+  },
+  input: {
+    width: "100%",
+    padding: "10px",
+    marginBottom: "10px",
+    border: "1px solid #ccc",
+    borderRadius: "5px",
+    fontSize: "14px",
+    fontFamily: "'Arial', sans-serif",
+    boxSizing: "border-box",
+  },
+  buttonContainer: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "10px",
+    gap: "10px",
+  },
+  closeButton: {
+    backgroundColor: "#ccc",
+    color: "#333",
+    border: "none",
+    padding: "8px 12px",
+    cursor: "pointer",
+    borderRadius: "6px",
+    fontSize: "12px",
+  },
 };
+
+
 
 export default PetFoodList;

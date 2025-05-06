@@ -1,51 +1,60 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const path = require('path');
-
-// Import Routes
-const petRouter = require('./Routes/PetRoute');
-const AdoptFormRoute = require('./Routes/AdoptFormRoute');
-const AdminRoute = require('./Routes/AdminRoute');
-const petFoodRoute = require("./Routes/PetFoodRoute");
-const interestRoutes = require("./Routes/interestRoutes");
+require("dotenv").config();
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const path = require("path");
 
 const app = express();
 
-// CORS Configuration
-app.use(cors({
-    origin: "http://localhost:3000", // Change this to your frontend URL
-    credentials: true
-}));
-
-// Static folder for images
-app.use('/images', express.static(path.join(__dirname, 'images')));
-
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Routes
-app.use(petRouter);
-app.use('/form', AdoptFormRoute);
-app.use('/admin', AdminRoute);
-app.use("/api/pet-foods", petFoodRoute);
-app.use("/api/interests", interestRoutes);
-
 // Connect to MongoDB
-mongoose.connect(process.env.mongooseURL, {
+mongoose
+  .connect(process.env.MONGO_URI || process.env.mongooseURL, {
     dbName: "PET_SHOP",
     useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-    .then(() => {
-        console.log('Connected to DB');
-        const PORT = process.env.PORT || 4000;
-        app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-        });
-    })
-    .catch((err) => {
-        console.error("MongoDB Connection Error:", err);
-    });
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
+
+// CORS Configuration
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:5174",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
+// Middleware
+app.use(express.json()); // for JSON requests
+app.use(express.urlencoded({ extended: true })); // for form data
+
+// Static folder for image access
+app.use("/images", express.static(path.join(__dirname, "images")));
+
+
+// ✅ ROUTE REGISTRATION (versioned and scoped)
+app.use("/api/auth", require("./Routes/authRoutes"));
+app.use("/api/pets", require("./Routes/PetRoute"));
+app.use("/api/form", require("./Routes/AdoptFormRoute"));
+app.use("/api/admin", require("./Routes/AdminRoute"));
+app.use("/api/pet-foods", require("./Routes/PetFoodRoute"));
+app.use("/api/interests", require("./Routes/interestRoutes"));
+app.use('/api/food-orders', require('./Routes/FoodOrderRoute'));
+app.use('/api/pet-orders', require('./Routes/petOrderRoutes'));
+
+
+// Fallback 404
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: "API endpoint not found." });
+});
+
+// Start the server
+const PORT = process.env.PORT || 5174;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+});

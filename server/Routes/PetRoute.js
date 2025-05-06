@@ -1,25 +1,34 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
-const { postPetRequest, approveRequest, deletePost, allPets } = require('../Controller/PetController');
+const multer = require("multer");
+const path = require("path");
 
+const {
+  postPetRequest,
+  approveRequest,
+  deletePost,
+  allPets
+} = require("../Controller/PetController");
+
+// Multer setup
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../images'));
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "../images"));
   },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
   }
 });
+const upload = multer({ storage });
 
-const upload = multer({ storage: storage });
+// Routes (base: /api/pets)
+router.get("/pending", (req, res) => allPets("Pending", req, res));
+router.get("/approved", (req, res) => allPets("Approved", req, res));
+router.get("/adopted", (req, res) => allPets("Adopted", req, res));
 
-router.get('/requests', (req, res) => allPets('Pending', req, res));
-router.get('/approvedPets', (req, res) => allPets('Approved', req, res));
-router.get('/adoptedPets', (req, res) => allPets('Adopted', req, res));
-router.post('/services', upload.single('picture'), postPetRequest);
-router.put('/approving/:id', approveRequest);
-router.delete('/delete/:id', deletePost);
+router.post("/post", upload.single("picture"), postPetRequest);
+router.put("/approve/:id", approveRequest);
+router.delete("/delete/:id", deletePost);
 
 module.exports = router;

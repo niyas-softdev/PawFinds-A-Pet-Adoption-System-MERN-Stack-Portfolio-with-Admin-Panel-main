@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./PetFoodManager.css"; 
 
-const API_URL = "http://localhost:4000/api/pet-foods";
+const API_URL = "http://localhost:5174/api/pet-foods";
 
 const PetFoodManager = () => {
     const [petFoods, setPetFoods] = useState([]);
@@ -145,7 +145,7 @@ const PetFoodManager = () => {
                   <div key={food._id} className="pet-food-card">
                       {food.images && food.images.length > 0 ? (
                           <img 
-                              src={`http://localhost:4000/images/${food.images?.[0]}`} 
+                              src={`http://localhost:5174/images/${food.images?.[0]}`} 
                               alt={food.name} 
                               className="pet-food-image" 
                               onError={(e) => { e.target.onerror = null; e.target.src = "https://widgets.truekonnects.com/images/default_food.jpg"; }}

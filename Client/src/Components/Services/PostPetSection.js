@@ -1,170 +1,134 @@
+// ✅ PostPetSection for Selling Pets Only (Adoption Removed)
 import React, { useState, useEffect } from "react";
 import postPet from "./images/postPet.png";
 
 const PostPetSection = () => {
-  const [name, setName] = useState("");
-  const [age, setAge] = useState("");
-  const [area, setArea] = useState("");
-  const [justification, setJustification] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [formError, setFormError] = useState(false);
-  const [emailError, setEmailError] = useState(false);
-  const [ageError, setAgeError] = useState(false);
-  const [showPopup, setShowPopup] = useState(false);
-  const [type, setType] = useState("None");
-  const [picture, setPicture] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    age: "",
+    area: "",
+    justification: "",
+    email: "",
+    phone: "",
+    type: "None",
+    picture: null,
+    price: "",
+  });
+
   const [fileName, setFileName] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false); 
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
-    if (!isSubmitting) {
-      setEmailError(false);
-      setAgeError(false);
-      setFormError(false);
-    }
+    if (!isSubmitting) setErrors({});
   }, [isSubmitting]);
 
-  const togglePopup = () => {
-    setShowPopup(!showPopup);
+  const validate = () => {
+    const errs = {};
+    if (!formData.name) errs.name = true;
+    if (!formData.age) errs.age = true;
+    if (!formData.area) errs.area = true;
+    if (!formData.justification) errs.justification = true;
+    if (!formData.email || !/^[a-zA-Z0-9._-]+@gmail\.com$/.test(formData.email)) errs.email = true;
+    if (!formData.phone) errs.phone = true;
+    if (!formData.picture) errs.picture = true;
+    if (formData.type === "None") errs.type = true;
+    if (!formData.price || isNaN(formData.price) || parseFloat(formData.price) <= 0) errs.price = true;
+    return errs;
   };
 
-  const isEmailValid = (email) => {
-    const emailPattern = /^[a-zA-Z0-9._-]+@gmail\.com$/;
-    return emailPattern.test(email);
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      setPicture(selectedFile);
-      setFileName(selectedFile.name);
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({ ...formData, picture: file });
+      setFileName(file.name);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (
-      !name ||
-      !age ||
-      !area ||
-      !justification ||
-      !email ||
-      !phone ||
-      !fileName ||
-      type === "None" ||
-      ageError
-    ) {
-      setFormError(true);
-      return;
-    }
-
-    if (!isEmailValid(email)) {
-      setEmailError(true);
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
     setIsSubmitting(true);
-
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("age", age);
-    formData.append("area", area);
-    formData.append("justification", justification);
-    formData.append("email", email);
-    formData.append("phone", phone);
-    formData.append("type", type);
-
-    if (picture) {
-      formData.append("picture", picture);
-    }
+    const bodyData = new FormData();
+    Object.keys(formData).forEach((key) => {
+      if (key === "picture") {
+        if (formData.picture) bodyData.append("picture", formData.picture);
+      } else {
+        bodyData.append(key, formData[key]);
+      }
+    });
+    bodyData.append("purpose", "Sale");
 
     try {
-      const response = await fetch("http://localhost:4000/services", {
+      const response = await fetch("http://localhost:5174/api/pets/post", {
         method: "POST",
-        body: formData,
+        body: bodyData,
       });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+      if (!response.ok) throw new Error("Network response failed");
 
-      console.log("Form submitted successfully");
-
-      setEmailError(false);
-      setFormError(false);
-      setName("");
-      setAge("");
-      setArea("");
-      setJustification("");
-      setEmail("");
-      setPhone("");
-      setPicture(null);
+      setShowPopup(true);
+      setFormData({
+        name: "",
+        age: "",
+        area: "",
+        justification: "",
+        email: "",
+        phone: "",
+        type: "None",
+        picture: null,
+        price: "",
+      });
       setFileName("");
-      togglePopup();
-    } catch (error) {
-      console.error("Error submitting form:", error);
+    } catch (err) {
+      console.error("Submit error:", err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-
   return (
     <section className="post-pet-section">
-      <h2>Post a Pet for Adoption</h2>
-      <img src={postPet} alt="Pet Looking for a Home" />
+      <h2 style={{ textAlign: "center", color: "#e91e63" }}>Sell a Pet</h2>
+      <img src={postPet} alt="Pet" style={{ display: "block", margin: "0 auto", maxWidth: "100%" }} />
 
-      <form onSubmit={handleSubmit} encType="multipart/form-data">
+      <form onSubmit={handleSubmit} encType="multipart/form-data" style={{ marginTop: "2rem" }}>
         <div className="input-box">
           <label>Name:</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <input type="text" name="name" value={formData.name} onChange={handleChange} />
         </div>
 
         <div className="input-box">
           <label>Pet Age:</label>
-          <input
-            type="text"
-            value={age}
-            onChange={(e) => {setAge(e.target.value);}}
-          />
+          <input type="text" name="age" value={formData.age} onChange={handleChange} />
         </div>
 
         <div className="input-box">
           <label>Picture:</label>
-          <label className="file-input-label">
-            <span className="file-input-text">
-              {fileName || "Choose a Picture"}
-            </span>
-            <input
-              className="file-input"
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-            />
+          <label className="file-input-label" style={{ cursor: "pointer", backgroundColor: "#f5f5f5", padding: "8px 12px", borderRadius: "6px", display: "inline-block", color: "#333" }}>
+            <span>{fileName || "Choose a Picture"}</span>
+            <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
           </label>
         </div>
 
         <div className="input-box">
           <label>Location:</label>
-          <input
-            type="text"
-            value={area}
-            onChange={(e) => setArea(e.target.value)}
-          />
+          <input type="text" name="area" value={formData.area} onChange={handleChange} />
         </div>
 
         <div className="filter-selection-service">
           <label>Type:</label>
-          <select
-            value={type}
-            onChange={(event) => setType(event.target.value)}
-          >
+          <select name="type" value={formData.type} onChange={handleChange}>
             <option value="None">None</option>
             <option value="Dog">Dog</option>
             <option value="Cat">Cat</option>
@@ -176,53 +140,43 @@ const PostPetSection = () => {
         </div>
 
         <div className="input-box">
-          <h3>Justification for giving a pet</h3>
-          <textarea
-            rows="4"
-            value={justification}
-            onChange={(e) => setJustification(e.target.value)}
-          ></textarea>
+          <label>Justification:</label>
+          <textarea name="justification" rows="4" value={formData.justification} onChange={handleChange} style={{ resize: "none" }}></textarea>
         </div>
-
-        <h3>Contact Information</h3>
 
         <div className="input-box">
           <label>Email:</label>
-          <input
-            type="text"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+          <input type="email" name="email" value={formData.email} onChange={handleChange} />
         </div>
 
         <div className="input-box">
-          <label>Ph.No:</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
+          <label>Phone:</label>
+          <input type="tel" name="phone" value={formData.phone} onChange={handleChange} />
         </div>
 
-        {emailError && (
-          <p className="error-message">Please provide a valid email address.</p>
-        )}
-        {formError && (
-          <p className="error-message">Please fill out all fields correctly.</p>
+        <div className="input-box">
+          <label>Sell Price (₹):</label>
+          <input type="number" name="price" placeholder="Enter price in INR" value={formData.price} onChange={handleChange} style={{ borderColor: errors.price ? "red" : "" }} />
+        </div>
+
+        {Object.keys(errors).length > 0 && (
+          <p className="error-message" style={{ color: "red", textAlign: "center" }}>
+            Please fill all fields correctly.
+          </p>
         )}
 
-        <button type="submit" className="cta-button" disabled={isSubmitting}>
-          {isSubmitting ? "Submitting..." : "Submit Your Pet"}
+        <button type="submit" className="cta-button" disabled={isSubmitting} style={{ backgroundColor: "#e91e63", color: "white", padding: "10px 20px", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer" }}>
+          {isSubmitting ? "Submitting..." : "Sell Pet"}
         </button>
 
         {showPopup && (
           <div className="popup">
-            <div className="popup-content">
-              <h4>Application Submitted; we'll get in touch with you soon.</h4>
+            <div className="popup-content" style={{ textAlign: "center", backgroundColor: "#fff", padding: "20px", borderRadius: "8px", boxShadow: "0 2px 10px rgba(0,0,0,0.2)" }}>
+              <h4>Submission Received! We’ll reach out soon.</h4>
+              <button className="close-btn" onClick={() => setShowPopup(false)} style={{ marginTop: "10px", padding: "6px 12px", backgroundColor: "#e91e63", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
+                Close
+              </button>
             </div>
-            <button onClick={togglePopup} className="close-btn">
-              Close <i className="fa fa-times"></i>
-            </button>
           </div>
         )}
       </form>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const INTEREST_API = "http://localhost:4000/api/interests";
+const INTEREST_API = "http://localhost:5174/api/interests";
 
 const InterestList = () => {
     const [interests, setInterests] = useState([]);
